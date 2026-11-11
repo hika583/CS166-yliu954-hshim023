@@ -2,10 +2,15 @@
 
 Phase 1 includes the database, sample data, and design documents.
 
+## Submission
+
+[Download the Phase 1 ZIP](output/CS166_Phase1.zip). It contains all six
+deliverables, setup commands, and test scripts/output.
+
 ## Files
 
 - [Requirements](docs/requirements.md)
-- [ER diagram PDF](output/pdf/er-diagram.pdf)
+- [ER diagram PDF](output/pdf/02_ER_Diagram.pdf)
 - [Relational schema and normalization](docs/relational-schema.md)
 - [Create tables](sql/create_tables.sql)
 - [Sample data](sql/sample_data.sql)
@@ -50,5 +55,5 @@ Java/JDBC and the GUI are for Phase 2.
 
 ![ER diagram](docs/er-diagram.png)
 
-The PDF includes notes on the section term, assignment ID, and student ID used
-in the SQL.
+The submission PDF includes the section term and keys used in the SQL. The
+original image above is kept as a reference.

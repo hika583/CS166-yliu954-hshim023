@@ -62,6 +62,9 @@ before results. Deleting a result does not delete its assignment.
 Final grades/GPA are calculated to avoid stale totals. The `enrollment_grades`
 view calculates weights, earned points, current grades, and final grades.
 
+`enroll_sid_idx` supports a student's course history. `worksin_did_idx` supports
+staff lookups by department. Primary keys already index section/assignment keys.
+
 ## Rules handled by the application
 
 - A `CHECK` cannot enforce weights totaling 100 across rows. Phase 2 will lock

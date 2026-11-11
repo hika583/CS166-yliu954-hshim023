@@ -25,7 +25,7 @@ can enter grades and view results. Phase 1 uses PostgreSQL; Java/JDBC is Phase 2
 
 | Relationship | Cardinality and participation |
 | --- | --- |
-| WorksIn | Professors/departments: many-to-many, optional on both sides. |
+| WorksIn | Many-to-many. Professor: zero or more departments. Department: one or more professors, including its manager. |
 | Manage | Department: exactly one manager. Professor: zero or more managed departments, with membership required. |
 | Student's department | Student: exactly one department. Department: zero or more students. |
 | Teach | Section: one professor and course. Professor/course: zero or more sections. |

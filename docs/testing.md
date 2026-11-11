@@ -34,7 +34,8 @@ changes, so the sample data stays the same.
 | enroll | 12 |
 | assign | 17 |
 
-All records are fictional. They cover three terms, repeated sections, multiple
+Sample rows use fictional names and fixed dates/scores, entered directly in
+`sample_data.sql`. They cover three terms, repeated sections, multiple
 department memberships, late submissions, missing and ungraded work, tied
 scores, and grades of 0 and 100. Each sample section has 100 total weight.
 
