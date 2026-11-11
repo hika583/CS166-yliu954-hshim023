@@ -25,12 +25,13 @@ SCREENSHOTS = {
 }
 
 
-def add_text(paragraph, text):
+def add_text(paragraph, text, emphasize=False):
     for i, chunk in enumerate(re.split(r'`([^`]+)`', text)):
         run = paragraph.add_run(chunk)
         if i % 2:
             run.font.name = 'Courier New'
             run.font.size = Pt(9)
+            run.bold = emphasize
 
 
 def build_docx():
@@ -40,11 +41,11 @@ def build_docx():
     section.page_height = Inches(11)
     section.top_margin = section.bottom_margin = Inches(0.7)
     section.left_margin = section.right_margin = Inches(0.8)
-    for name in ['Normal', 'Title', 'Heading 1', 'Caption']:
+    for name in ['Normal', 'Title', 'Heading 1', 'Caption', 'List Bullet']:
         style = doc.styles[name]
         style.font.name = 'Times New Roman'
         style.font.color.rgb = RGBColor(0, 0, 0)
-        style.paragraph_format.line_spacing = 1
+        style.paragraph_format.line_spacing = 1.05
         fonts = style.element.rPr.rFonts
         if fonts is not None:
             for key in list(fonts.attrib):
@@ -54,22 +55,27 @@ def build_docx():
             border.getparent().remove(border)
     normal = doc.styles['Normal']
     normal.font.size = Pt(11)
-    normal.paragraph_format.space_after = Pt(6)
+    normal.paragraph_format.space_after = Pt(7)
     title = doc.styles['Title']
-    title.font.size = Pt(15)
+    title.font.size = Pt(18)
     title.font.bold = True
-    title.paragraph_format.space_after = Pt(10)
+    title.paragraph_format.space_after = Pt(11)
     heading = doc.styles['Heading 1']
-    heading.font.size = Pt(12)
+    heading.font.size = Pt(13.5)
     heading.font.bold = True
-    heading.paragraph_format.space_before = Pt(8)
-    heading.paragraph_format.space_after = Pt(7)
+    heading.paragraph_format.space_before = Pt(11)
+    heading.paragraph_format.space_after = Pt(8)
     heading.paragraph_format.keep_with_next = True
     caption = doc.styles['Caption']
     caption.font.size = Pt(10)
     caption.font.italic = False
     caption.paragraph_format.space_after = Pt(5)
     caption.paragraph_format.keep_with_next = True
+    bullet = doc.styles['List Bullet']
+    bullet.font.size = Pt(11)
+    bullet.paragraph_format.left_indent = Inches(0.18)
+    bullet.paragraph_format.first_line_indent = Inches(-0.12)
+    bullet.paragraph_format.space_after = Pt(5)
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
     field = OxmlElement('w:fldSimple')
@@ -105,6 +111,7 @@ def build_docx():
                 w, h = image.size
             width = min(6.45, 7.3 * w / h)
             p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.paragraph_format.space_after = Pt(9)
             p.add_run().add_picture(str(image_path), width=Inches(width))
             i += 1
@@ -129,18 +136,21 @@ def build_docx():
             while i < len(lines) and lines[i].startswith('  ') and lines[i].strip():
                 text += ' ' + lines[i].strip()
                 i += 1
-            p = doc.add_paragraph()
-            p.paragraph_format.left_indent = Inches(0.15)
-            p.paragraph_format.first_line_indent = Inches(-0.15)
-            p.paragraph_format.space_after = Pt(3)
-            add_text(p, '- ' + text)
+            p = doc.add_paragraph(style='List Bullet')
+            add_text(p, text, emphasize=text.startswith('`'))
             continue
         text = line
         i += 1
         while i < len(lines) and lines[i].strip() and not lines[i].startswith(('#', '- ', '```', '[Screenshot:')):
             text += ' ' + lines[i].strip()
             i += 1
-        add_text(doc.add_paragraph(), text)
+        p = doc.add_paragraph()
+        if text.startswith('The checks cover'):
+            p.paragraph_format.page_break_before = True
+            p.paragraph_format.keep_with_next = True
+        if text.startswith(('The functional dependencies', 'These dependencies')):
+            p.paragraph_format.space_before = Pt(7)
+        add_text(p, text)
     doc.save(DOCX)
     print(DOCX)
 
