@@ -1,59 +1,40 @@
-# Relational schema and normalization
+# Relational schema
 
-SQL identifiers are unquoted lowercase names. In the definitions below, `K`
-means `(pid, cid, sectionnumber, term)`, the key of one section offering. Each
-appearance of `K` expands to those four columns, not a separate stored column.
+`K = (pid, cid, sectionnumber, term)` is the section key. SQL names are lowercase.
 
-## Relations and keys
+## Tables and keys
 
-| Relation and attributes | Primary key | Foreign keys | Other candidate keys |
-| --- | --- | --- | --- |
-| `professor(pid, name)` | `pid` | None | None assumed |
-| `course(cid, coursenumber, unit)` | `cid` | None | None assumed |
-| `department(did, name, manageby)` | `did` | `(manageby, did)` references `worksin(pid, did)` | `name` |
-| `worksin(pid, did)` | `(pid, did)` | `pid` references `professor`; `did` references `department` | None additional |
-| `student(sid, name, dept, unitrequirement)` | `sid` | `dept` references `department(did)` | None assumed |
-| `teach(K, dept)` | `K` | `cid` references `course`; `(pid, dept)` references `worksin(pid, did)` | None assumed |
-| `assignment(K, id, weight, duedate)` | `(K, id)` | `K` references `teach` | None assumed |
-| `enroll(K, sid)` | `(K, sid)` | `K` references `teach`; `sid` references `student` | None additional |
-| `assign(K, id, sid, grade, turnindate)` | `(K, id, sid)` | `(K, id)` references `assignment`; `(K, sid)` references `enroll` | None additional |
+| Relation | Primary key | Foreign keys |
+| --- | --- | --- |
+| `professor(pid, name)` | `pid` | None |
+| `course(cid, coursenumber, unit)` | `cid` | None |
+| `department(did, name, manageby)` | `did` | `(manageby, did) -> worksin(pid, did)` |
+| `worksin(pid, did)` | `(pid, did)` | `pid -> professor(pid)`; `did -> department(did)` |
+| `student(sid, name, dept, unitrequirement)` | `sid` | `dept -> department(did)` |
+| `teach(K, dept)` | `K` | `cid -> course(cid)`; `(pid, dept) -> worksin(pid, did)` |
+| `assignment(K, id, weight, duedate)` | `(K, id)` | `K -> teach(K)` |
+| `enroll(K, sid)` | `(K, sid)` | `K -> teach(K)`; `sid -> student(sid)` |
+| `assign(K, id, sid, grade, turnindate)` | `(K, id, sid)` | `(K, id) -> assignment(K, id)`; `(K, sid) -> enroll(K, sid)` |
 
-The `worksin` composite references ensure the department manager and each
-section's professor actually work in the relevant department. Together with
-the `worksin` parent references, they also guarantee that the professor and
-department exist. `assign` uses both composite foreign keys to prevent a result
-from mixing an assignment and an enrollment from different offerings.
+Department `name` is the only additional candidate key. Other names and course
+numbers can repeat.
 
-The department-manager foreign key is `DEFERRABLE INITIALLY DEFERRED` because
-departments and their manager memberships refer to one another. Insert both
-inside a transaction; PostgreSQL checks that relationship at commit. Other
-foreign keys are checked normally. There are no cascading deletes; dependent
-records must be handled explicitly before deleting their parents.
+Result foreign keys must match the assignment and enrollment in the same
+section. Managers/professors need matching department membership. The manager
+FK is `DEFERRABLE INITIALLY DEFERRED` to allow both rows to be inserted before
+commit. Deletes do not cascade.
 
-## Attributes and declarative constraints
+## Types and constraints
 
-All attributes are NOT NULL except `assignment.duedate`, `assign.grade`, and
-`assign.turnindate`. Keys and other numeric identifiers use integers. Names and
-terms use text. Weights and grades use `NUMERIC(5,2)`, and dates use `DATE`.
-
-| Constraint | Meaning |
-| --- | --- |
-| Positive IDs and section numbers | Reject zero/negative identifiers. |
-| Nonblank names and terms | Reject empty or whitespace-only text. Terms such as `2026-Fall` identify separate offerings. |
-| `department.name` UNIQUE | Departments have distinct names in this dataset. |
-| `course.unit` between 1 and 12 | Courses have positive, bounded unit values. |
-| `student.unitrequirement` between 1 and 300 | The individual graduation unit requirement is positive and bounded. |
-| `assignment.weight > 0 AND weight <= 100` | Each assignment contributes a valid positive percentage. |
-| `assign.grade` between 0 and 100 when present | Zero is a real grade; NULL is an unrecorded grade. |
-
-Names are not person identifiers. Course numbers are not assumed globally
-unique, and section numbers can be reused in another offering. No uniqueness
-constraint is added for these attributes.
+- IDs and section numbers: positive integers.
+- Names and terms: nonblank text; department names are unique.
+- Course units: integer 1–12. Individual unit requirements: integer 1–300.
+- Weight: `NUMERIC(5,2)`, greater than 0 and at most 100.
+- Grade: `NUMERIC(5,2)`, 0–100 when present.
+- Dates: `DATE`. Only `duedate`, `grade`, and `turnindate` allow NULL.
+- Primary keys are unique and NOT NULL. Foreign keys require matching parents.
 
 ## Functional dependencies
-
-The following are the relevant nontrivial functional dependencies under the
-stated assumptions. Each right-hand side includes all non-key attributes.
 
 | Relation | Dependencies |
 | --- | --- |
@@ -64,63 +45,33 @@ stated assumptions. Each right-hand side includes all non-key attributes.
 | `teach` | `K -> dept` |
 | `assignment` | `(K, id) -> weight, duedate` |
 | `assign` | `(K, id, sid) -> grade, turnindate` |
-| `worksin`, `enroll` | All columns form the primary key; there are no non-key attributes. |
+| `worksin`, `enroll` | All columns are in the primary key; no non-key attributes. |
 
-In particular, `dept -> unitrequirement` is not an assumed dependency:
-requirements may differ between students in the same department. Likewise,
-`(pid, cid, sectionnumber)` does not identify an offering without its term.
+`dept` does not determine `unitrequirement`. A section number alone is not a key.
 
-## Normalization and update anomalies
+## Normalization
 
-Each relation is in 3NF under these dependencies: non-key attributes depend on
-the whole key, and every listed nontrivial determinant is a candidate key.
-The same dependencies also satisfy BCNF. These claims rely on the documented
-business assumptions rather than on attribute names alone.
+The tables are in 3NF: non-key attributes depend on the whole key, with no
+non-key-to-non-key dependencies. Every listed determinant is a candidate key,
+so these dependencies also meet BCNF.
 
-Professor, student, course, and department descriptions are stored once in
-their own relations. An enrollment or assignment result does not repeat a
-student's name, department name, or course units, so correcting a description
-does not require editing every result row. `worksin` represents multiple
-department memberships without repeating professor records. `teach` stores an
-offering's department once. `assignment` stores its weight and due date once,
-independently of how many students have results. `assign` stores only the
-student-specific percentage and submission date.
+Names, units, and assignment details are stored once, avoiding repeated updates
+across grades. Sections can be inserted before enrollments and assignments
+before results. Deleting a result does not delete its assignment.
 
-The composite keys distinguish offerings across terms and multiple assignments
-within an offering. Parent rows can exist before dependent rows: for example,
-a section can be created before students enroll, and an assignment can be
-defined before any grades exist. Student results do not determine the
-existence of assignment definitions. GPA and final percentages are derived
-instead of being copied into multiple tables and becoming stale after a grade
-or weight update.
+Final grades/GPA are calculated to avoid stale totals. The `enrollment_grades`
+view calculates weights, earned points, current grades, and final grades.
 
-## Rules beyond ordinary declarative constraints
+## Rules handled by the application
 
-The `enrollment_grades` SQL view derives total assignment weight, graded weight,
-earned percentage points, the current grade, and a final grade when complete.
-It is a query over the base relations, not another stored entity or a duplicate
-source of grade data. The demonstration queries use this view.
+- A `CHECK` cannot enforce weights totaling 100 across rows. Phase 2 will lock
+  `teach` during assignment edits/finalization and check the total. The view
+  returns finals only for fully graded, 100-weight schemes.
+- What-if calculations must not overwrite recorded grades.
+- Phase 2 handles access to individual grades and aggregate peer reports.
+- Grade/GPA formulas and repeated-attempt rules are in [requirements.md](requirements.md).
 
-- Assignment weights must total exactly 100 before finalization. Phase 1 permits
-  draft schemes and does not enforce the cross-row total in a `CHECK`. The
-  Phase 2 application will validate the total in a transaction and lock the
-  parent `teach` row for both finalization and assignment edits.
-- Final grade/GPA calculations require a complete scheme and recorded results
-  for every assignment. The formulas, GPA scale, and repeated-attempt policy
-  are defined in [requirements.md](requirements.md).
-- What-if values must not overwrite official results. Phase 2 will calculate
-  scenarios separately from grade-update operations.
-- Students may view their own detailed results and aggregate peer reports.
-  Phase 2 must enforce user permissions; table foreign keys do not provide
-  application authorization.
+## Changes from the draft
 
-## Changes from the supplied draft
-
-The SQL retains the draft's nine relation names and basic structure. `sid`
-clarifies the student's identifier; assignment `id` is added to `assign`;
-`term` belongs to the offering and all dependent keys; and the offering's
-`dept` is a non-key attribute. Grades are decimal percentages, assignment IDs
-serve as labels, and the student's unit requirement is individualized. These
-choices resolve ambiguities without adding a new application framework or
-additional entity tables. They should be reflected in the team's diagram and
-reviewed alongside it; no instructor approval is assumed here.
+Use `sid` for students, add `id` to `assign`, and include `term` in section/dependent
+keys. `dept` is non-key. Grades are decimal percentages; unit requirements are per student.

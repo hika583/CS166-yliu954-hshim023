@@ -1,4 +1,4 @@
--- Hand-written fictional data; no real academic records or external dataset.
+-- Fictional sample data for the grade database.
 -- This file is intended to be loaded once after create_tables.sql.
 BEGIN;
 
