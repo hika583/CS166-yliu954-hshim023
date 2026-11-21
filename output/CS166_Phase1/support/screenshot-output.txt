@@ -1,0 +1,211 @@
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE VIEW
+COMMIT
+BEGIN
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 4
+INSERT 0 6
+INSERT 0 5
+INSERT 0 11
+INSERT 0 12
+INSERT 0 17
+COMMIT
+ table_name | rows
+------------+------
+ professor  |    3
+ course     |    3
+ department |    2
+ worksin    |    4
+ student    |    6
+ teach      |    5
+ assignment |   11
+ enroll     |   12
+ assign     |   17
+(9 rows)
+
+Running Phase 1 checks; all test changes will be rolled back.
+psql:sql/test_constraints.sql:41: NOTICE:  PASS: all nine tables have expected seed counts
+
+psql:sql/test_constraints.sql:44: NOTICE:  PASS: duplicate professor (SQLSTATE 23505)
+
+psql:sql/test_constraints.sql:46: NOTICE:  PASS: duplicate department name (SQLSTATE 23505)
+
+psql:sql/test_constraints.sql:48: NOTICE:  PASS: missing required name (SQLSTATE 23502)
+
+psql:sql/test_constraints.sql:50: NOTICE:  PASS: blank name (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:52: NOTICE:  PASS: whitespace-only name (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:54: NOTICE:  PASS: invalid identifier (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:56: NOTICE:  PASS: missing student department (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:58: NOTICE:  PASS: invalid unit requirement (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:60: NOTICE:  PASS: invalid course units (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:62: NOTICE:  PASS: missing professor membership (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:64: NOTICE:  PASS: manager outside department (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:66: NOTICE:  PASS: teacher outside department (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:68: NOTICE:  PASS: blank term (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:70: NOTICE:  PASS: invalid section number (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:72: NOTICE:  PASS: assignment without section (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:75: NOTICE:  PASS: zero assignment weight (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:78: NOTICE:  PASS: assignment weight above 100 (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:80: NOTICE:  PASS: duplicate enrollment (SQLSTATE 23505)
+
+psql:sql/test_constraints.sql:82: NOTICE:  PASS: enrollment without student (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:84: NOTICE:  PASS: score without assignment (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:86: NOTICE:  PASS: score without matching enrollment (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:88: NOTICE:  PASS: score linked to wrong term (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:90: NOTICE:  PASS: duplicate assignment score (SQLSTATE 23505)
+
+psql:sql/test_constraints.sql:92: NOTICE:  PASS: negative grade (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:94: NOTICE:  PASS: grade above 100 (SQLSTATE 23514)
+
+psql:sql/test_constraints.sql:96: NOTICE:  PASS: delete referenced student (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:99: NOTICE:  PASS: delete referenced assignment (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:101: NOTICE:  PASS: delete manager membership (SQLSTATE 23503)
+
+psql:sql/test_constraints.sql:104: NOTICE:  PASS: same section number in separate terms stays distinct
+
+psql:sql/test_constraints.sql:107: NOTICE:  PASS: one student has multiple scores in one section
+
+psql:sql/test_constraints.sql:112: NOTICE:  PASS: zero is graded; NULL is ungraded
+
+psql:sql/test_constraints.sql:117: NOTICE:  PASS: current grade 86; target 70 needs 54 on remaining work
+
+psql:sql/test_constraints.sql:120: NOTICE:  PASS: completed final grades are 84, 94, and 66
+
+psql:sql/test_constraints.sql:123: NOTICE:  PASS: no incomplete enrollment gets a final grade
+
+psql:sql/test_constraints.sql:127: NOTICE:  PASS: all five sample sections have 100 total assignment weight
+
+psql:sql/test_constraints.sql:133: NOTICE:  PASS: data includes late, ungraded, missing, and tied scores
+
+psql:sql/test_constraints.sql:139: NOTICE:  PASS: draft weight total does not produce a final grade
+
+psql:sql/test_constraints.sql:144: NOTICE:  PASS: overweight scheme does not produce a final grade
+
+psql:sql/test_constraints.sql:157: NOTICE:  PASS: valid insert and update
+
+psql:sql/test_constraints.sql:160: NOTICE:  PASS: delete unreferenced record
+
+psql:sql/test_constraints.sql:166: NOTICE:  PASS: failed grade updates left the original scores intact
+
+All Phase 1 checks passed. Test changes rolled back.
+Null display is "(none)".
+1. Alex (101): enrolled courses, professor, department, and term
+ sid |    name     | coursenumber | professor  |    department    | sectionnumber |    term
+-----+-------------+--------------+------------+------------------+---------------+-------------
+ 101 | Alex Rivera |          166 | Ada Moreno | Computer Science |             1 | 2025-Fall
+ 101 | Alex Rivera |          141 | Ben Patel  | Computer Science |             1 | 2026-Fall
+ 101 | Alex Rivera |          166 | Ada Moreno | Computer Science |             1 | 2026-Fall
+ 101 | Alex Rivera |          166 | Ada Moreno | Computer Science |             1 | 2026-Spring
+(4 rows)
+
+2. Current grade, average needed for 70%, and a 90%-remaining what-if
+ sid | current_grade |    earned_percentage    | graded_weight | average_needed_for_70 | projected_with_90_remaining
+-----+---------------+-------------------------+---------------+-----------------------+-----------------------------
+ 101 |         86.00 | 43.00000000000000000000 |         50.00 |                 54.00 |                       88.00
+ 102 |        100.00 | 50.00000000000000000000 |         50.00 |                 40.00 |                       95.00
+ 103 |          0.00 |  0.00000000000000000000 |         20.00 |                 87.50 |                       72.00
+ 104 |        (none) |  0.00000000000000000000 |             0 |                 70.00 |                       90.00
+ 106 |        (none) |  0.00000000000000000000 |             0 |                 70.00 |                       90.00
+(5 rows)
+
+3. Assignment statistics, including assignments with no grades
+ pid | cid  | sectionnumber |    term     | id | graded_count | minimum | maximum | average | late_submissions
+-----+------+---------------+-------------+----+--------------+---------+---------+---------+------------------
+   1 | 1001 |             1 | 2025-Fall   |  1 |            1 |   70.00 |   70.00 |   70.00 |                0
+   1 | 1001 |             1 | 2025-Fall   |  2 |            1 |   80.00 |   80.00 |   80.00 |                0
+   1 | 1001 |             1 | 2026-Fall   |  1 |            3 |    0.00 |  100.00 |   60.00 |                0
+   1 | 1001 |             1 | 2026-Fall   |  2 |            2 |   90.00 |  100.00 |   95.00 |                1
+   1 | 1001 |             1 | 2026-Fall   |  3 |            0 |  (none) |  (none) |  (none) |                0
+   1 | 1001 |             1 | 2026-Spring |  1 |            3 |   60.00 |  100.00 |   83.33 |                1
+   1 | 1001 |             1 | 2026-Spring |  2 |            3 |   70.00 |   90.00 |   80.00 |                0
+   2 | 1002 |             1 | 2026-Fall   |  1 |            2 |   85.50 |   85.50 |   85.50 |                1
+   2 | 1002 |             1 | 2026-Fall   |  2 |            0 |  (none) |  (none) |  (none) |                0
+   3 | 2001 |             1 | 2026-Fall   |  1 |            1 |   72.00 |   72.00 |   72.00 |                0
+   3 | 2001 |             1 | 2026-Fall   |  2 |            0 |  (none) |  (none) |  (none) |                0
+(11 rows)
+
+4. Fall CS166 enrollments with no recorded grades (NOT EXISTS)
+ sid |    name
+-----+------------
+ 104 | Jamie Park
+ 106 | Riley Chen
+(2 rows)
+
+5. Enrollments graded on every assignment, ranked by final percentage
+ sid | pid | cid  | sectionnumber |    term     | final_grade | grade_rank
+-----+-----+------+---------------+-------------+-------------+------------
+ 102 |   1 | 1001 |             1 | 2026-Spring |       94.00 |          1
+ 101 |   1 | 1001 |             1 | 2026-Spring |       84.00 |          2
+ 101 |   1 | 1001 |             1 | 2025-Fall   |       75.00 |          3
+ 103 |   1 | 1001 |             1 | 2026-Spring |       66.00 |          4
+(4 rows)
+
+6. Credit-weighted GPA from completed enrollments
+ sid |    name     | completed_units | gpa
+-----+-------------+-----------------+------
+ 101 | Alex Rivera |               8 | 2.50
+ 102 | Morgan Lee  |               4 | 4.00
+ 103 | Sam Taylor  |               4 | 1.00
+(3 rows)
+
+7. Professor/term summary of completed course results
+ pid |    name    |    term     | completed_enrollments | average_final_grade | minimum | maximum
+-----+------------+-------------+-----------------------+---------------------+---------+---------
+   1 | Ada Moreno | 2025-Fall   |                     1 |               75.00 |   75.00 |   75.00
+   1 | Ada Moreno | 2026-Spring |                     3 |               81.33 |   66.00 |   94.00
+(2 rows)
+
+8. Aggregate grade distribution for Fall CS166 assignment 1
+ grade_band  | students
+-------------+----------
+ A: 90-100   |        1
+ B: 80-89.99 |        1
+ F: below 60 |        1
+(3 rows)
+
+INSERT INTO professor VALUES (1, 'Duplicate');
+ERROR:  duplicate key value violates unique constraint "professor_pkey"
+DETAIL:  Key (pid)=(1) already exists.
+
+UPDATE assign SET grade = 101 WHERE pid=1 AND cid=1001 AND sectionnumber=1 AND term='2026-Fall' AND id=1 AND sid=101;
+ERROR:  new row for relation "assign" violates check constraint "assign_grade_check"
+DETAIL:  Failing row contains (1, 1001, 1, 2026-Fall, 1, 101, 101.00, 2026-10-15).
+
+INSERT INTO assign VALUES (1,1001,1,'2026-Fall',1,105,80,NULL);
+ERROR:  insert or update on table "assign" violates foreign key constraint "assign_pid_cid_sectionnumber_term_sid_fkey"
+DETAIL:  Key (pid, cid, sectionnumber, term, sid)=(1, 1001, 1, 2026-Fall, 105) is not present in table "enroll".
